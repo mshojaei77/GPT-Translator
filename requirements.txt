@@ -1,3 +1,5 @@
 g4f
 PyMuPDF
 streamlit
+groq
+openai
