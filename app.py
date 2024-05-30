@@ -5,16 +5,14 @@ import openai
 import groq
 
 def translate_text(text, language, prov, model, key):
-    prompt = f"""Translate the following text into Native {language},
+    prompt = f"""Translate the following text into Native {language}, 
     ensuring that you fully comprehend the context and accurately convey the intended meanings.
-    Special names or technical terms, and paragraphs should remain Untouch.
-    **Do not add any additional notes**
+    Special names or technical terms should remain Untouch.
     \n
     \n
     "{text}"
     \n
     \n
-    **Do not add any additional notes**
     """
     if prov == 'Free (Slow)':
         providers = [
