@@ -47,7 +47,7 @@ Contributions are welcome Feel free to submit pull requests or report issues.
 
 ## License
 
-GPT-Translator is released under the  License. See `[LICENSE]()` for details.
+GPT-Translator is released under the  License. See [LICENSE](https://github.com/mshojaei77/GPT-Translator/blob/main/LICENSE) for details.
 
 ## Contact
 
