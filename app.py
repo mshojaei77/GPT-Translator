@@ -85,9 +85,13 @@ with st.sidebar:
     if prov == 'OpenAI':
         key = st.text_input("Enter Your API key", type="password")
         model =  st.selectbox('Choose LLM Model:', ('gpt-3.5-turbo', 'gpt-4o', 'gpt-4-turbo','gpt-4'))
-    if prov == 'Groq':
+    elif prov == 'Groq':
         key = st.text_input("Enter Your API key", type="password")
         model =  st.selectbox('Choose LLM Model:', ('llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma-7b-it'))
+    else:
+        key = None
+        model = None
+        
     
     uploaded_file = st.file_uploader("Choose a file")
     if uploaded_file:
@@ -116,3 +120,8 @@ if paragraphs_text:
                 st.markdown(t_text)
                 
         st.download_button("Download Translation", "".join(translated_texts) )
+        
+              
+
+
+            
