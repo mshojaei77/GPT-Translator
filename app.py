@@ -1,84 +1,27 @@
 import streamlit as st
-import fitz  # PyMuPDF
-import g4f
-import openai
-import groq
-
-def translate_text(text, language, prov, model, key):
-    prompt = f"""Translate the following text into Native {language}, 
-    ensuring that you fully comprehend the context and accurately convey the intended meanings.
-    Special names or technical terms should remain Untouch.
-    \n
-    \n
-    "{text}"
-    \n
-    \n
-    """
-    if prov == 'Free (Slow)':
-        providers = [
-            g4f.Provider.Bing, g4f.Provider.Aichatos,
-            g4f.Provider.GeekGpt, g4f.Provider.Liaobots,
-            g4f.Provider.Phind, g4f.Provider.HuggingChat
-        ]
-        for provider in providers:
-            try:
-                response = g4f.ChatCompletion.create(
-                    model=g4f.models.default,
-                    provider=provider,
-                    messages=[{"role": "system", "content": "you are a professional translator"},
-                            {"role": "user", "content": prompt}],
-                )
-                return response
-            except Exception as e:
-                print(f"Translation failed with provider {provider}: {e}")
-                continue
-            
-    elif prov == 'OpenAI':
-        client = openai.OpenAI(api_key=key)
-        completion = client.chat.completions.create(
-            model= model,
-            messages=[
-                {"role": "system", "content": "you are a professional translator"},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return completion.choices[0].message.content
-    elif prov == 'Groq':
-        client = groq.Groq(api_key=key)
-        completion = client.chat.completions.create(
-            model= model,
-            messages=[
-                {"role": "system", "content": "you are a professional translator"},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return completion.choices[0].message.content
-    
-    
-
-def extract_text_by_paragraph(uploaded_file):
-    try:
-        document = fitz.open(uploaded_file)
-        all_text = []
-
-        for page_num in range(document.page_count):
-            page = document.load_page(page_num)
-            text = page.get_text()
-            paragraphs = text.split('\n\n')  # Assuming paragraphs are separated by two newline characters
-            all_text.extend(paragraphs)
-
-        return all_text
-
-    except Exception as e:
-        print(f"Error occurred while extracting text from PDF: {e}")
-        return []
+from agent import extract_text_by_paragraph, translate_text
 
 
+
+st.set_page_config(
+    page_title="GPT-Translator",
+    page_icon="🌍",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'About': 'http://t.me/mshojaei77',
+        'Report a bug': "http://t.me/shojaeireal",
+    }
+)
 
 translated_texts = []
 paragraphs_text = ''
+btn = False
+
+tab1, tab2= st.tabs(["Translation" , "Orginal Text"])
 
 with st.sidebar:
+    st.header("Settings", divider='gray')
     prov = st.selectbox('Choose Translation Provider:', ('Free (Slow)', 'OpenAI', 'Groq'))
     if prov == 'OpenAI':
         key = st.text_input("Enter Your API key", type="password")
@@ -89,37 +32,45 @@ with st.sidebar:
     else:
         key = None
         model = None
+
+
+    mode = st.radio(
+        "Choose Input mode",
+        ["PDF file", "Text"],
+        captions = ["Upload a pdf.", "input your text."])
+
+
+ 
+with tab1:
+    if mode == "PDF file":
+        uploaded_file = st.file_uploader("Choose a file")
+        if uploaded_file:
+            paragraphs_text = extract_text_by_paragraph(uploaded_file) 
+    else:
+        paragraphs_text = st.text_input("Enter the text").split("\n\n")
         
-    
-    uploaded_file = st.file_uploader("Choose a file")
-    if uploaded_file:
-        paragraphs_text = extract_text_by_paragraph(uploaded_file)
-    
+    language = st.selectbox('Choose Target Language:', ('Persian', 'English', 'Dutch'))
+    btn = st.button("Translate")
     if paragraphs_text:
         paragraph_count = len(paragraphs_text)
-        for text in paragraphs_text:
-            st.write(''.join(text))
+        if btn:
+            progress_text = "Translation in progress. Please wait ..."
+            my_bar = st.progress(0, text=progress_text)
+
+            for i, text in enumerate(paragraphs_text):
+                t_text = translate_text(text, language , prov , model, key)
+                translated_texts.extend(t_text)
+                my_bar.progress((i + 1)/paragraph_count, text=progress_text)
+                if language == "Persian":
+                    st.markdown(f"<div style='direction: rtl;'>{t_text}</div>", unsafe_allow_html=True)
+                else:
+                    st.markdown(t_text)
+
+            my_bar.empty()
+            st.success("Translation finished!")
+            st.download_button("Download Translation", "".join(translated_texts))
+
     
-
-
-if paragraphs_text:
-    language = st.selectbox('Choose Target Language:', ('Persian', 'English', 'Dutch'))
-    if st.button("Translate"):
-        progress_text = "Translation in progress. Please wait ..."
-        my_bar = st.progress(0, text=progress_text)
-        
-        for i, text in enumerate(paragraphs_text):
-            t_text = translate_text(text, language , prov , model, key)
-            translated_texts.extend(t_text)
-            my_bar.progress((i + 1)/paragraph_count, text=progress_text)
-            if language == "Persian":
-                st.markdown(f"<div style='direction: rtl;'>{t_text}</div>", unsafe_allow_html=True)
-            else:
-                st.markdown(t_text)
-                
-        st.download_button("Download Translation", "".join(translated_texts) )
-        
-              
-
-
-            
+with tab2:
+    for text in paragraphs_text:
+        st.write(''.join(text))   
